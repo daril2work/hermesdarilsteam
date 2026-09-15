@@ -1,18 +1,18 @@
-import os
+# PythonAnywhere WSGI Entrypoint
+# PythonAnywhere uses WSGI. We wrap our FastAPI app using a2wsgi.
+
 import sys
+import os
 
-# Add project root directory to Python path
-project_home = os.path.dirname(os.path.abspath(__file__))
-if project_home not in sys.path:
-    sys.path.insert(0, project_home)
+# Path to project directory
+project_folder = os.path.dirname(os.path.abspath(__file__))
+if project_folder not in sys.path:
+    sys.path.insert(0, project_folder)
 
-# Load environment variables (.env)
-from dotenv import load_dotenv
-load_dotenv(os.path.join(project_home, ".env"))
-
-# Import ASGI app and convert it to WSGI for PythonAnywhere
-from a2wsgi import ASGIMiddleware
-from ui.web_dashboard import app
-
-# PythonAnywhere uses this 'application' callable
-application = ASGIMiddleware(app)
+try:
+    from a2wsgi import WSGIMiddleware
+    from ui.web_dashboard import app
+    
+    application = WSGIMiddleware(app)
+except ImportError:
+    from ui.web_dashboard import app as application
