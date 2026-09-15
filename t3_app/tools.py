@@ -4,11 +4,6 @@ import datetime
 import requests
 import json
 
-try:
-    from duckduckgo_search import DDGS
-except ImportError:
-    DDGS = None
-
 def get_system_time() -> str:
     """Returns current system timestamp."""
     now = datetime.datetime.now()
@@ -17,25 +12,25 @@ def get_system_time() -> str:
 def web_search(query: str, max_results: int = 5) -> str:
     """Performs web search to retrieve real-time data."""
     results = []
-    if DDGS is not None:
-        try:
-            with DDGS() as ddgs:
-                ddg_results = list(ddgs.text(query, max_results=max_results))
-                for item in ddg_results:
-                    results.append(f"- **{item.get('title')}**: {item.get('body')} (URL: {item.get('href')})")
-        except Exception as e:
-            results.append(f"DuckDuckGo search error: {str(e)}")
+    # Lazy import duckduckgo_search to avoid boot delay
+    try:
+        from duckduckgo_search import DDGS
+        with DDGS() as ddgs:
+            ddg_results = list(ddgs.text(query, max_results=max_results))
+            for item in ddg_results:
+                results.append(f"- **{item.get('title')}**: {item.get('body')} (URL: {item.get('href')})")
+    except Exception as e:
+        results.append(f"Search notice: {str(e)}")
     
     if not results:
-        # Fallback HTTP search query snippet
         try:
             resp = requests.get(f"https://html.duckduckgo.com/html/?q={requests.utils.quote(query)}", headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-            }, timeout=8)
+            }, timeout=5)
             if resp.status_code == 200:
                 results.append("Search executed via DuckDuckGo HTML fallback.")
         except Exception as ex:
-            results.append(f"Search fallback error: {str(ex)}")
+            results.append(f"Search fallback notice: {str(ex)}")
             
     return "\n".join(results) if results else "No search results found."
 
@@ -81,9 +76,8 @@ def execute_python(code: str) -> str:
 def fetch_web_page(url: str) -> str:
     """Fetches text content of a web page for deep research."""
     try:
-        resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}, timeout=10)
+        resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}, timeout=8)
         if resp.status_code == 200:
-            # Strip simple HTML tags
             text = resp.text
             import re
             text = re.sub(r'<script.*?>.*?</script>', '', text, flags=re.DOTALL)
@@ -95,60 +89,6 @@ def fetch_web_page(url: str) -> str:
             return f"Failed to fetch web page. HTTP Status Code: {resp.status_code}"
     except Exception as e:
         return f"Error fetching web page: {str(e)}"
-
-def gdrive_list_files(query: str = "", max_results: int = 10) -> str:
-    """Lists files in Google Drive."""
-    try:
-        from connector.google_drive import GoogleDriveConnector
-        gdc = GoogleDriveConnector()
-        return gdc.list_files(query=query, max_results=max_results)
-    except Exception as e:
-        return f"Google Drive error: {str(e)}"
-
-def gdrive_read_file(file_id: str) -> str:
-    """Reads content of a Google Drive file or document."""
-    try:
-        from connector.google_drive import GoogleDriveConnector
-        gdc = GoogleDriveConnector()
-        return gdc.read_file(file_id=file_id)
-    except Exception as e:
-        return f"Google Drive read error: {str(e)}"
-
-def gdrive_upload_file(name: str, content: str, folder_id: str = "") -> str:
-    """Uploads a new text document to Google Drive."""
-    try:
-        from connector.google_drive import GoogleDriveConnector
-        gdc = GoogleDriveConnector()
-        return gdc.upload_text_file(name=name, content=content, folder_id=folder_id)
-    except Exception as e:
-        return f"Google Drive upload error: {str(e)}"
-
-def sumopod_get_pod_status() -> str:
-    """Checks the status and health of the remote SumoPod Hermes Pod."""
-    try:
-        from connector.sumopod_pod import SumoPodConnector
-        spc = SumoPodConnector()
-        return spc.get_pod_status()
-    except Exception as e:
-        return f"Error connecting to SumoPod Pod: {str(e)}"
-
-def sumopod_list_remote_skills() -> str:
-    """Lists the 53 skills installed in the remote SumoPod Hermes Pod."""
-    try:
-        from connector.sumopod_pod import SumoPodConnector
-        spc = SumoPodConnector()
-        return spc.list_remote_skills()
-    except Exception as e:
-        return f"Error listing skills from SumoPod Pod: {str(e)}"
-
-def sumopod_trigger_webhook(event_name: str, payload_json: str = "{}") -> str:
-    """Sends a webhook task trigger to the remote SumoPod Hermes Pod."""
-    try:
-        from connector.sumopod_pod import SumoPodConnector
-        spc = SumoPodConnector()
-        return spc.trigger_webhook(event_name=event_name, payload_json=payload_json)
-    except Exception as e:
-        return f"Error triggering webhook on SumoPod Pod: {str(e)}"
 
 # Tools Schema Definitions for Hermes XML Tool Calling
 AVAILABLE_TOOLS = [
@@ -162,65 +102,6 @@ AVAILABLE_TOOLS = [
                 "subtask_instruction": {"type": "string", "description": "Clear instruction for the staff agent to execute."}
             },
             "required": ["staff_agent_id", "subtask_instruction"]
-        }
-    },
-    {
-        "name": "sumopod_get_pod_status",
-        "description": "Check connection status, active model, and health of the user's remote Hermes Pod on SumoPod (hermes-gwrdes.jkt8.sumopod.my.id).",
-        "parameters": {"type": "object", "properties": {}},
-        "required": []
-    },
-    {
-        "name": "sumopod_list_remote_skills",
-        "description": "List all 53 modular AI skills installed and running inside the user's remote Hermes Pod on SumoPod.",
-        "parameters": {"type": "object", "properties": {}},
-        "required": []
-    },
-    {
-        "name": "sumopod_trigger_webhook",
-        "description": "Trigger an automated task or event on the remote SumoPod Hermes Pod via Inbound Webhook.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "event_name": {"type": "string", "description": "The event name (e.g. 'research_task', 'daily_briefing')."},
-                "payload_json": {"type": "string", "description": "JSON string data to pass with the event."}
-            },
-            "required": ["event_name"]
-        }
-    },
-    {
-        "name": "gdrive_list_files",
-        "description": "List or search files and documents in user's Google Drive storage.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "Optional search term to filter files by title or content."},
-                "max_results": {"type": "integer", "description": "Maximum number of files to return (default 10)."}
-            },
-            "required": []
-        }
-    },
-    {
-        "name": "gdrive_read_file",
-        "description": "Read and extract text content from a Google Drive file, Google Doc, or Google Sheet using file_id.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "file_id": {"type": "string", "description": "The Google Drive file ID."}
-            },
-            "required": ["file_id"]
-        }
-    },
-    {
-        "name": "gdrive_upload_file",
-        "description": "Create or upload a new text file/document to Google Drive.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string", "description": "Filename (e.g. 'Rangkuman.txt' or 'Notes.md')."},
-                "content": {"type": "string", "description": "Text content to save into the file."}
-            },
-            "required": ["name", "content"]
         }
     },
     {
@@ -263,4 +144,3 @@ AVAILABLE_TOOLS = [
         "required": []
     }
 ]
-
