@@ -5,14 +5,22 @@ import uuid
 import datetime
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "grok_bot.db")
+_DB_INITIALIZED = False
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    global _DB_INITIALIZED
+    if not _DB_INITIALIZED:
+        init_db()
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=20.0)
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_db():
-    conn = get_db()
+    global _DB_INITIALIZED
+    if _DB_INITIALIZED:
+        return
+        
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=20.0)
     cursor = conn.cursor()
     
     # 1. Agents Table
@@ -62,6 +70,7 @@ def init_db():
         seed_default_agents(conn)
         
     conn.close()
+    _DB_INITIALIZED = True
 
 def seed_default_agents(conn):
     cursor = conn.cursor()
@@ -133,6 +142,3 @@ def seed_default_agents(conn):
         """, agent)
     
     conn.commit()
-
-# Run database initialization on module load
-init_db()

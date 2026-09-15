@@ -1,5 +1,4 @@
-# PythonAnywhere WSGI Entrypoint
-# ASGIMiddleware converts FastAPI (ASGI) to PythonAnywhere (WSGI)
+# PythonAnywhere WSGI Entrypoint for FastAPI
 
 import sys
 import os
@@ -10,17 +9,16 @@ project_folder = os.path.dirname(os.path.abspath(__file__))
 if project_folder not in sys.path:
     sys.path.insert(0, project_folder)
 
-# Set UTF-8 encoding
 os.environ["PYTHONIOENCODING"] = "utf-8"
 
 try:
     from a2wsgi import ASGIMiddleware
     from ui.web_dashboard import app
 
-    # ASGIMiddleware wraps FastAPI (ASGI) into WSGI for PythonAnywhere
-    application = ASGIMiddleware(app)
-    print("Successfully initialized FastAPI ASGIMiddleware for PythonAnywhere!")
+    # ASGIMiddleware with wait_time optimized for PythonAnywhere WSGI server
+    application = ASGIMiddleware(app, wait_time=0.001)
+    print("FastAPI ASGIMiddleware successfully loaded!")
 except Exception as e:
-    print(f"WSGI Initialization Error: {e}")
+    print(f"WSGI Entrypoint Exception: {e}")
     traceback.print_exc()
     raise e
