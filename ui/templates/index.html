@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Grok Bot AI (Hermes 3 Engine)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Markdown-it & Highlight.js for Syntax Highlighting -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="grok-theme">
+
+    <div class="app-container">
+        <!-- SIDEBAR BACKDROP FOR MOBILE -->
+        <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-top">
+                <div class="brand">
+                    <div class="logo-icon">
+                        <i class="fa-solid fa-bolt-lightning"></i>
+                    </div>
+                    <div class="brand-text">
+                        <h2>GROK <span>BOT</span></h2>
+                        <span class="sub-badge">Hermes 3 Powered</span>
+                    </div>
+                </div>
+                <button class="btn-sidebar-close" id="btn-sidebar-close" title="Close Menu" aria-label="Close Menu">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <button class="btn-new-chat" id="btn-new-chat">
+                <i class="fa-solid fa-plus"></i> New Chat
+            </button>
+
+            <!-- GROK BOTS / AGENTS SECTION -->
+            <div class="sidebar-section">
+                <div class="section-header">
+                    <span>AI AGENTS (GROK BOTS)</span>
+                    <button class="btn-icon-add" id="btn-open-create-agent" title="Create Custom Agent">
+                        <i class="fa-solid fa-circle-plus"></i>
+                    </button>
+                </div>
+                <div class="agent-list" id="agent-list-container">
+                    <!-- Agent cards injected via JS -->
+                </div>
+            </div>
+
+            <!-- HISTORY SECTION -->
+            <div class="sidebar-section history-section">
+                <div class="section-header">
+                    <span>CHATS HISTORY</span>
+                </div>
+                <div class="history-list" id="history-list">
+                    <div class="history-item active">
+                        <i class="fa-regular fa-message"></i> Current Conversation
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOTER STATUS -->
+            <div class="sidebar-footer">
+                <div class="gateway-status" id="gateway-status-box">
+                    <span class="status-dot online" id="pod-status-dot"></span>
+                    <div class="status-info">
+                        <span class="server-title" id="pod-server-title">Hermes Pod</span>
+                        <span class="server-sub" id="pod-server-sub">https://hermes-gwrdes.jkt8.sumopod.my.id</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CHAT AREA -->
+        <main class="main-content">
+            <!-- HEADER BAR -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="btn-sidebar-toggle" id="btn-sidebar-toggle" title="Open Menu" aria-label="Open Menu">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="active-agent-info" id="active-agent-display">
+                        <span class="agent-avatar" id="current-agent-avatar">🤖</span>
+                        <div class="agent-info-text">
+                            <h3 id="current-agent-name">Grok Original</h3>
+                            <span class="agent-desc-inline" id="current-agent-desc">Iconic witty, direct, highly intelligent persona.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GROK MODES SELECTOR -->
+                <div class="grok-mode-selector">
+                    <button class="mode-btn active" data-mode="fun" title="Witty, humorous & sarcastic persona">
+                        <i class="fa-solid fa-masks-theater"></i> <span class="mode-text">Fun Mode</span>
+                    </button>
+                    <button class="mode-btn" data-mode="regular" title="Fast, direct & objective answers">
+                        <i class="fa-solid fa-bolt"></i> <span class="mode-text">Regular Mode</span>
+                    </button>
+                    <button class="mode-btn" data-mode="think" title="Extended Reasoning Chain-of-Thought">
+                        <i class="fa-solid fa-brain"></i> <span class="mode-text">Think Mode</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- CHAT MESSAGES CONTAINER -->
+            <div class="chat-container" id="chat-container">
+                <!-- HERO WELCOME BANNER -->
+                <div class="welcome-hero" id="welcome-hero">
+                    <div class="hero-icon">
+                        <i class="fa-solid fa-atom"></i>
+                    </div>
+                    <h1>What do you want to grok today?</h1>
+                    <p>Powered by <strong>Nous Hermes 3 AI</strong> &amp; <strong>SumoPod Gateway</strong> with real-time web search and code execution.</p>
+                    
+                    <div class="quick-prompts">
+                        <button class="quick-card" data-prompt="What are the current latest news about SpaceX Starship?">
+                            <i class="fa-solid fa-rocket"></i>
+                            <span>SpaceX Starship News</span>
+                        </button>
+                        <button class="quick-card" data-prompt="Write a Python script to calculate the Fibonacci series up to 1000 and run it.">
+                            <i class="fa-solid fa-code"></i>
+                            <span>Python Execution Test</span>
+                        </button>
+                        <button class="quick-card" data-prompt="Explain quantum entanglement in a witty, humorous way like Grok.">
+                            <i class="fa-solid fa-sparkles"></i>
+                            <span>Explain Quantum Physics</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHAT INPUT BAR -->
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <div class="tools-badges">
+                        <span class="badge-tool" id="badge-web-search" title="Web Search Enabled">
+                            <i class="fa-solid fa-globe"></i> Web Search
+                        </span>
+                        <span class="badge-tool" id="badge-code-exec" title="Grok Build Code Interpreter Enabled">
+                            <i class="fa-solid fa-terminal"></i> Grok Build
+                        </span>
+                    </div>
+
+                    <textarea id="user-input" placeholder="Ask Grok anything... (Press Enter to send, Shift+Enter for new line)" rows="2"></textarea>
+
+                    <div class="input-actions">
+                        <div class="mode-indicator" id="current-mode-label">
+                            <i class="fa-solid fa-masks-theater"></i> Fun Mode Active
+                        </div>
+                        <button id="btn-send" class="btn-send" title="Send Message">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="disclaimer">
+                    Grok-Like Bot (Hermes 3 AI) running via SumoPod Gateway. Autonomous Agentic System.
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- CREATE CUSTOM AGENT MODAL -->
+    <div class="modal-overlay" id="modal-create-agent">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-robot"></i> Create Custom Grok Bot Agent</h3>
+                <button class="btn-close-modal" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-create-agent">
+                <div class="form-group">
+                    <label>Agent Name</label>
+                    <input type="text" id="agent-name" placeholder="e.g. Sarcastic Python Engineer" required>
+                </div>
+                <div class="form-group">
+                    <label>Avatar / Emoji Icon</label>
+                    <input type="text" id="agent-avatar" value="🤖" placeholder="e.g. 🐍, 🚀, 🧠, ⚡" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="agent-desc" placeholder="Brief summary of what this bot does..." required>
+                </div>
+                <div class="form-group">
+                    <label>System Prompt (Persona & Instructions)</label>
+                    <textarea id="agent-prompt" rows="4" placeholder="You are an expert AI agent who..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Enabled Agentic Tools</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="tools" value="web_search" checked> Real-Time Web Search</label>
+                        <label><input type="checkbox" name="tools" value="execute_python" checked> Grok Build Python Execution</label>
+                        <label><input type="checkbox" name="tools" value="fetch_web_page" checked> Deep Web Reader</label>
+                        <label><input type="checkbox" name="tools" value="get_system_time" checked> System Clock</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btn-cancel-modal">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Agent</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application JavaScript -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
