@@ -1,5 +1,6 @@
 import uvicorn
 from config import HOST, PORT
+from ui.web_dashboard import app
 
 if __name__ == "__main__":
     print(f"\n=======================================================")
@@ -8,5 +9,4 @@ if __name__ == "__main__":
     print(f"   Running Web UI Dashboard at: http://localhost:{PORT}")
     print(f"=======================================================\n")
     
-    uvicorn.run("ui.web_dashboard:app", host=HOST, port=PORT, reload=True)
-
+    uvicorn.run("main:app", host=HOST, port=PORT, reload=True)
