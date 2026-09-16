@@ -3,6 +3,7 @@ import requests
 from config import SUMOPOD_API_BASE, SUMOPOD_API_KEY, SUMOPOD_MODEL_NAME, GROK_PERSONAS
 from t3_app.tools import AVAILABLE_TOOLS
 from connector.router import ConnectorRouter
+from connector.sumopod_pod import SumoPodConnector
 
 class HermesBrain:
     def __init__(self, api_base=None, api_key=None, model_name=None):
@@ -54,9 +55,32 @@ class HermesBrain:
             "Authorization": f"Bearer {self.api_key}" if self.api_key else ""
         }
         
-        max_react_turns = 3
-        current_turn = 0
+        # Primary: Execute via direct Hermes Agent Pod in SumoPod
+        pod_connector = SumoPodConnector()
+        latest_user_prompt = messages[-1].get("content", "") if messages else ""
         
+        if pod_connector.pod_url and latest_user_prompt:
+            try:
+                yield {
+                    "type": "thinking",
+                    "content": f"Mengirim query ke Hermes Agent Pod di SumoPod..."
+                }
+                hermes_resp = pod_connector.send_chat_message(latest_user_prompt)
+                
+                # Check for XML tool calls
+                tool_calls = router.parse_tool_calls(hermes_resp)
+                if not tool_calls:
+                    yield {"type": "content", "content": hermes_resp}
+                    return
+                
+                # If tool calls are returned, handle tool execution loop
+                assistant_content = hermes_resp
+            except Exception as pod_err:
+                yield {
+                    "type": "warning",
+                    "content": f"Notice: Hermes Pod connection unavailable ({str(pod_err)}). Beralih ke gateway fallback..."
+                }
+
         while current_turn < max_react_turns:
             current_turn += 1
             payload = {

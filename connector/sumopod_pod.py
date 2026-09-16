@@ -188,3 +188,62 @@ class SumoPodConnector:
             return f"Event '{event_name}' processed by Hermes Pod (HTTP {resp.status_code})"
         except Exception as e:
             return f"Error triggering event on Hermes Pod: {str(e)}"
+
+    def send_chat_message(self, prompt: str, timeout: int = 35) -> str:
+        """
+        Sends a prompt directly to the remote Hermes Pod via PTY WebSocket,
+        waits for completion, and returns the clean structured assistant response.
+        """
+        if not self._ensure_auth():
+            raise Exception(f"Unable to authenticate to Hermes Pod at {self.pod_url}")
+            
+        from websockets.sync.client import connect
+        import re
+        
+        r_ticket = self.session.post(f"{self.pod_url}/api/auth/ws-ticket", timeout=5)
+        if r_ticket.status_code != 200:
+            raise Exception(f"Failed to acquire WS ticket: HTTP {r_ticket.status_code}")
+        ticket = r_ticket.json().get("ticket")
+        
+        ws_scheme = "wss://" if self.pod_url.startswith("https://") else "ws://"
+        host_part = self.pod_url.replace("https://", "").replace("http://", "")
+        ws_url = f"{ws_scheme}{host_part}/api/pty?channel=chat&profile=default&fresh=1&ticket={ticket}"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        
+        with connect(ws_url, additional_headers=headers, origin=self.pod_url, open_timeout=8) as ws:
+            ws.send("\x1b[RESIZE:80;24]")
+            time.sleep(1.5)
+            
+            # Send prompt using bracketed paste to prevent character drops
+            ws.send(f"\x1b[200~{prompt}\x1b[201~")
+            time.sleep(0.3)
+            ws.send("\r")
+            
+            # Wait for execution completion
+            t0 = time.time()
+            while time.time() - t0 < timeout:
+                try:
+                    m = ws.recv(timeout=1.5)
+                    if isinstance(m, bytes):
+                        m = m.decode("utf-8", errors="ignore")
+                    clean = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", m)
+                    clean = re.sub(r"\x1b\][^\x07]*\x07", "", clean)
+                    if "─ready │" in clean or "☤ready" in clean:
+                        break
+                except Exception:
+                    pass
+                    
+        # Retrieve the clean assistant message from the latest session
+        time.sleep(0.5)
+        r_sess = self.session.get(f"{self.pod_url}/api/sessions", timeout=5)
+        if r_sess.status_code == 200:
+            sessions = r_sess.json().get("sessions", [])
+            if sessions:
+                latest_id = sessions[0].get("id")
+                r_msg = self.session.get(f"{self.pod_url}/api/sessions/{latest_id}/messages", timeout=5)
+                if r_msg.status_code == 200:
+                    msgs = r_msg.json().get("messages", [])
+                    if msgs and msgs[-1].get("role") == "assistant":
+                        return msgs[-1].get("content")
+                        
+        raise Exception("Hermes completed the turn but no assistant message was recorded in session.")

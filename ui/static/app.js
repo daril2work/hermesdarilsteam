@@ -225,7 +225,31 @@ document.addEventListener("DOMContentLoaded", () => {
     function handleChatEvent(event, bodyDiv, onContent) {
         if (event.type === "content") {
             onContent(event.content);
-            bodyDiv.innerHTML = md.render(event.content);
+            const thinkingCard = bodyDiv.querySelector(".thinking-card");
+            if (thinkingCard) {
+                const icon = thinkingCard.querySelector(".fa-brain");
+                if (icon) icon.classList.remove("fa-bounce");
+            }
+            bodyDiv.innerHTML = (thinkingCard ? thinkingCard.outerHTML : "") + md.render(event.content);
+        } else if (event.type === "thinking") {
+            let thinkCard = bodyDiv.querySelector(".thinking-card");
+            if (!thinkCard) {
+                thinkCard = document.createElement("div");
+                thinkCard.className = "tool-card thinking-card";
+                thinkCard.style.borderColor = "var(--accent-purple, #a855f7)";
+                thinkCard.style.background = "rgba(168, 85, 247, 0.08)";
+                thinkCard.innerHTML = `
+                    <div class="tool-card-header" style="color: var(--accent-purple, #a855f7); font-size: 0.85rem;">
+                        <i class="fa-solid fa-brain fa-bounce"></i> Hermes Pod Status
+                    </div>
+                    <div class="tool-card-body thinking-content" style="font-size: 0.82rem; color: #cbd5e1; font-family: monospace;"></div>
+                `;
+                bodyDiv.appendChild(thinkCard);
+            }
+            const contentEl = thinkCard.querySelector(".thinking-content");
+            if (contentEl) {
+                contentEl.textContent = event.content;
+            }
         } else if (event.type === "warning" || event.type === "error") {
             const alertCard = document.createElement("div");
             alertCard.className = "tool-card";
