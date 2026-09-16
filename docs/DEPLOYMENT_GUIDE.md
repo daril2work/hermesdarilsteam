@@ -1,68 +1,71 @@
-# ☁️ Panduan Deployment ke PythonAnywhere
+# ☁️ Panduan Deployment PythonAnywhere (Native ASGI / Uvicorn)
 
-Panduan ini memandu proses deploy aplikasi **Hermes Agentic (FastAPI)** ke server **PythonAnywhere** menggunakan WSGI bridge (`a2wsgi`).
-
----
-
-## 1. Persiapan File di Repository
-
-File berikut sudah disiapkan di dalam project:
-* [`wsgi.py`](../wsgi.py): Entrypoint WSGI yang menghubungkan ASGI FastAPI ke server WSGI PythonAnywhere.
-* [`requirements.txt`](../requirements.txt): Daftar dependencies termasuk `fastapi`, `uvicorn`, `a2wsgi`, dan `jinja2`.
+Dokumen ini memandu proses deploy aplikasi **Hermes Agentic (FastAPI)** ke server **PythonAnywhere** secara **Native ASGI** menggunakan **Uvicorn** melalui UNIX Domain Socket.
 
 ---
 
-## 2. Langkah-Langkah Deploy
+## 1. Arsitektur Deployment
 
-### Langkah 1: Upload Code ke PythonAnywhere
-Di Bash Console PythonAnywhere:
-```bash
-git clone <URL_REPO_GITHUB> hermes-agentic
-cd hermes-agentic
+Berbeda dengan cara tradisional WSGI (`a2wsgi`) yang sering mengalami *deadlock / worker hang*, PythonAnywhere sekarang mendukung **Native ASGI**:
+
+```mermaid
+graph LR
+    User[Web Browser] --> PA_Nginx[PythonAnywhere Nginx Proxy]
+    PA_Nginx --> Socket[UNIX Domain Socket: app.sock]
+    Socket --> Uvicorn[Uvicorn ASGI Server]
+    Uvicorn --> FastAPI[FastAPI App: main:app]
+    FastAPI --> Hermes[Nous Hermes 3 AI / SumoPod Gateway]
 ```
 
-### Langkah 2: Buat Virtual Environment & Install Requirements
+---
+
+## 2. Langkah Setup Awal (Hanya 1 Kali)
+
+### Langkah 1: Clone Repository di PythonAnywhere
+Di **Bash Console** PythonAnywhere:
+```bash
+git clone https://github.com/daril2work/hermesdarilsteam.git ~/hermesdarilsteam
+cd ~/hermesdarilsteam
+```
+
+### Langkah 2: Buat Virtual Environment & Install Dependensi
 ```bash
 mkvirtualenv hermes-env --python=/usr/bin/python3.10
 pip install -r requirements.txt
+pip install --upgrade pythonanywhere
 ```
 
 ### Langkah 3: Setup File `.env`
 ```bash
-nano .env
+nano ~/hermesdarilsteam/.env
 ```
-Isi dengan:
+Isi konfigurasi kredensial:
 ```env
 SUMOPOD_API_BASE=https://ai.sumopod.com/v1
 SUMOPOD_API_KEY=sk-riGjhXrfHLF15cwBJNU1vw
 SUMOPOD_MODEL_NAME=deepseek-v4-flash
 ```
 
-### Langkah 4: Konfigurasi Web Tab di PythonAnywhere
-1. Masuk ke tab **Web** > **Add a new web app** > pilih **Manual configuration** > **Python 3.10**.
-2. Atur path:
-   * **Source code:** `/home/<username>/hermes-agentic`
-   * **Working directory:** `/home/<username>/hermes-agentic`
-   * **Virtualenv:** `/home/<username>/.virtualenvs/hermes-env`
+### Langkah 4: Buat API Token
+Buka dashboard PythonAnywhere ➔ **Account** ➔ tab **API Token** ➔ klik **Create a new API token**.
 
-### Langkah 5: Edit WSGI Configuration File
-Klik link **WSGI configuration file** di tab Web, hapus isinya dan ganti dengan:
-```python
-import sys
-import os
-
-path = '/home/<username>/hermes-agentic'
-if path not in sys.path:
-    sys.path.insert(0, path)
-
-from dotenv import load_dotenv
-load_dotenv(os.path.join(path, ".env"))
-
-from a2wsgi import ASGIMiddleware
-from ui.web_dashboard import app
-
-application = ASGIMiddleware(app)
+### Langkah 5: Buat Website Native ASGI via CLI
+Di **Bash Console**:
+```bash
+pa website create --domain darilteam.pythonanywhere.com --command '/home/darilteam/.virtualenvs/hermes-env/bin/uvicorn --app-dir /home/darilteam/hermesdarilsteam --uds ${DOMAIN_SOCKET} main:app'
 ```
 
-### Langkah 6: Reload Web App
-Klik tombol hijau **Reload <username>.pythonanywhere.com**, lalu buka website kamu di browser!
+---
+
+## 3. Cara Update & Reload Website
+
+Setiap kali ada pembaruan kode di komputer lokal (`git push`):
+
+1. Buka **Bash Console** di PythonAnywhere.
+2. Jalankan:
+   ```bash
+   cd ~/hermesdarilsteam
+   git pull
+   pa website reload --domain darilteam.pythonanywhere.com
+   ```
+3. Website live di: 👉 **https://darilteam.pythonanywhere.com**
