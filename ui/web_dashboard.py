@@ -1,7 +1,7 @@
 import os
 import json
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
@@ -32,12 +32,9 @@ class ChatRequest(BaseModel):
     agent_id: Optional[str] = "grok-original"
     mode: Optional[str] = "fun"  # fun, regular, think
 
-@app.get("/", response_class=HTMLResponse)
-def read_root(request: Request):
-    try:
-        return templates.TemplateResponse(request=request, name="index.html")
-    except TypeError:
-        return templates.TemplateResponse("index.html", {"request": request})
+@app.get("/", response_class=FileResponse)
+def read_root():
+    return FileResponse(os.path.join(BASE_DIR, "templates", "index.html"))
 
 @app.get("/api/agents")
 def get_agents():
