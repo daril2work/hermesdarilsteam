@@ -226,6 +226,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (event.type === "content") {
             onContent(event.content);
             bodyDiv.innerHTML = md.render(event.content);
+        } else if (event.type === "warning" || event.type === "error") {
+            const alertCard = document.createElement("div");
+            alertCard.className = "tool-card";
+            const isErr = event.type === "error";
+            alertCard.style.borderColor = isErr ? "#ef4444" : "#f59e0b";
+            alertCard.style.background = isErr ? "rgba(239, 68, 68, 0.1)" : "rgba(245, 158, 11, 0.1)";
+            alertCard.innerHTML = `
+                <div class="tool-card-header" style="color: ${isErr ? '#ef4444' : '#f59e0b'};">
+                    <i class="fa-solid fa-triangle-exclamation"></i> ${isErr ? 'Gateway Error' : 'Gateway Warning'}
+                </div>
+                <div class="tool-card-body" style="font-size: 0.85rem; color: #cbd5e1;">${event.content}</div>
+            `;
+            bodyDiv.appendChild(alertCard);
         } else if (event.type === "delegation_call") {
             const delegationCard = document.createElement("div");
             delegationCard.className = "tool-card delegation-card";

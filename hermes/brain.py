@@ -78,12 +78,19 @@ class HermesBrain:
                 res_data = resp.json()
                 assistant_content = res_data["choices"][0]["message"]["content"]
             except Exception as e:
-                # Fallback mock response for testing if gateway URL is offline/unreachable
+                # Fallback response if gateway URL is offline/unreachable
                 yield {
                     "type": "warning",
-                    "content": f"Notice: Could not connect to SumoPod Gateway ({str(e)}). Generating fallback response."
+                    "content": f"Notice: Could not connect to SumoPod Gateway ({str(e)})."
                 }
-                assistant_content = f"Greetings! I am {agent_config.get('name', 'Grok')}. How can I assist you today?"
+                assistant_content = (
+                    f"⚠️ **Gagal terhubung ke AI Gateway**\n\n"
+                    f"Detail error: `{str(e)}`\n\n"
+                    f"**Kemungkinan penyebab:**\n"
+                    f"1. File `.env` belum dibuat di server hosting (`SUMOPOD_API_KEY` kosong).\n"
+                    f"2. Server hosting (misal: PythonAnywhere Free Tier) memblokir koneksi internet keluar (outbound proxy/whitelist).\n\n"
+                    f"Silakan periksa konfigurasi `.env` atau log server."
+                )
             
             # Check for XML tool calls
             tool_calls = router.parse_tool_calls(assistant_content)
