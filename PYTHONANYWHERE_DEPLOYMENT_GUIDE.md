@@ -10,7 +10,7 @@ Cara paling praktis, cepat, dan profesional untuk meng-host aplikasi Anda di **P
 graph LR
     Local[Komputer Lokal d:/hermes-agentic] -->|git push| GitHub[Repository GitHub Anda]
     GitHub -->|git clone / git pull| PA[PythonAnywhere Server]
-    PA -->|Live Web App| Public[https://username.pythonanywhere.com]
+    PA -->|Live Web App| Public[https://darilteam.pythonanywhere.com]
 ```
 
 ---
@@ -29,15 +29,13 @@ git add .
 # 3. Commit awal
 git commit -m "Initial commit Grok Bot Clone with Hermes 3 AI"
 
-# 4. Hubungkan ke repository GitHub Anda (ganti URL repository Anda)
-git remote add origin https://github.com/USERNAME/hermes-agentic.git
+# 4. Hubungkan ke repository GitHub Anda
+git remote add origin https://github.com/daril2work/hermesdarilsteam.git
 git branch -M main
 
 # 5. Push ke GitHub
 git push -u origin main
 ```
-
-*(Catatan: Buat repositori baru di GitHub terlebih dahulu, bisa Publik maupun Privat).*
 
 ---
 
@@ -47,22 +45,25 @@ git push -u origin main
 2. Buka tab **Consoles**, lalu klik **Bash**.
 3. Jalankan perintah `git clone`:
    ```bash
+   # Hapus folder lama jika ingin instalasi bersih
+   rm -rf ~/hermesdarilsteam
+
    # Clone repository dari GitHub
-   git clone https://github.com/USERNAME/hermes-agentic.guard.git ~/hermes-agentic
+   git clone https://github.com/daril2work/hermesdarilsteam.git ~/hermesdarilsteam
 
    # Masuk ke folder proyek
-   cd ~/hermes-agentic
+   cd ~/hermesdarilsteam
    ```
 
 ---
 
 ## ⚙️ Langkah 3: Buat Virtual Environment & Install Dependensi
 
-Di Bash Console PythonAnywhere (`~/hermes-agentic`):
+Di Bash Console PythonAnywhere (`~/hermesdarilsteam`):
 
 ```bash
-# Buat virtual environment Python 3.11
-mkvirtualenv --python=/usr/bin/python3.11 hermes-env
+# Buat virtual environment Python 3.10
+mkvirtualenv --python=/usr/bin/python3.10 hermes-env
 
 # Install seluruh dependensi proyek
 pip install -r requirements.txt
@@ -72,40 +73,46 @@ pip install -r requirements.txt
 
 ## 🔑 Langkah 4: Buat File `.env` di PythonAnywhere
 
-Buat file `.env` di server PythonAnywhere (`nano ~/hermes-agentic/.env`):
+Buat file `.env` di server PythonAnywhere (`nano ~/hermesdarilsteam/.env`):
 
 ```env
 SUMOPOD_API_BASE=https://ai.sumopod.com/v1
-SUMOPOD_API_KEY=docgen
+SUMOPOD_API_KEY=masukkan_api_key_anda_di_sini
 SUMOPOD_MODEL_NAME=nous-hermes-3
 ```
+*(Tekan `Ctrl+O` lalu `Enter` untuk save, dan `Ctrl+X` untuk keluar dari nano)*
 
 ---
 
 ## 🌐 Langkah 5: Set Up Web App & WSGI File
 
 1. Buka tab **Web** di PythonAnywhere ➔ Klik **Add a new web app**.
-2. Pilih **Manual configuration** ➔ Pilih **Python 3.11**.
-3. Set **Virtualenv path**:
-   `/home/USERNAME/.virtualenvs/hermes-env` *(ganti `USERNAME` dengan username Anda)*.
-4. Edit **WSGI configuration file** (klik link file di halaman Web tab):
-   Ganti operates bawaan dengan:
+2. Pilih **Manual configuration** ➔ Pilih **Python 3.10**.
+3. Set **Source code** dan **Working directory** ke: `/home/darilteam/hermesdarilsteam`
+4. Set **Virtualenv path**: `/home/darilteam/.virtualenvs/hermes-env`
+5. Edit **WSGI configuration file** (klik link file berakhiran `_wsgi.py` di halaman Web tab), ganti seluruh isinya dengan:
 
 ```python
 import sys
 import os
 
-path = '/home/USERNAME/hermes-agentic'  # Ganti USERNAME dengan username akun Anda
+# 1. Sesuaikan path project
+path = '/home/darilteam/hermesdarilsteam'
 if path not in sys.path:
     sys.path.insert(0, path)
 
-from a2wsgi import WSGIMiddleware
+# 2. Pastikan load file .env
+from dotenv import load_dotenv
+load_dotenv(os.path.join(path, ".env"))
+
+# 3. Middleware menggunakan ASGIMiddleware
+from a2wsgi import ASGIMiddleware
 from ui.web_dashboard import app
 
-application = WSGIMiddleware(app)
+application = ASGIMiddleware(app)
 ```
 
-5. Klik tombol hijau **Reload username.pythonanywhere.com**.
+6. **Save** file tersebut, dan klik tombol hijau **Reload darilteam.pythonanywhere.com**.
 
 ---
 
@@ -113,5 +120,5 @@ application = WSGIMiddleware(app)
 
 Setiap kali Anda mengubah kode di komputer lokal:
 1. Di komputer lokal: `git add .` ➔ `git commit -m "update"` ➔ `git push`.
-2. Di PythonAnywhere Bash Console: `cd ~/hermes-agentic && git pull`.
+2. Di PythonAnywhere Bash Console: `cd ~/hermesdarilsteam && git pull`.
 3. Klik **Reload** di tab Web PythonAnywhere!
