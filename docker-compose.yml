@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  hermes-app:
+    build: .
+    container_name: hermes-agentic-dashboard
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./grok_bot.db:/app/grok_bot.db
